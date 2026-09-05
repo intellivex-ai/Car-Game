@@ -1,26 +1,22 @@
 package com.racing.game
 
-import androidx.games.activity.GameActivity
+import com.google.android.games.GameActivity
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 
 /**
- * MainActivity — minimal host for the C++ game engine.
+ * MainActivity — host for the C++ GameActivity engine.
  *
  * All game logic lives in native C++ via GameActivity / android_main().
- * This Kotlin class only handles Android-layer concerns:
- *   - Full-screen immersive mode
- *   - Keeping the screen awake during gameplay
- *
- * Do NOT add game logic here.
+ * This Kotlin class handles Android window and immersive mode setup.
  */
 class MainActivity : GameActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Keep screen on while the game is running
+        // Keep screen awake during gameplay
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Enter full-screen immersive mode immediately
@@ -35,8 +31,7 @@ class MainActivity : GameActivity() {
     }
 
     /**
-     * Hides the system status bar and navigation bar.
-     * Uses sticky immersive mode so bars stay hidden even after accidental swipes.
+     * Hides system status bar and navigation bar.
      */
     @Suppress("DEPRECATION")
     private fun applyImmersiveMode() {
