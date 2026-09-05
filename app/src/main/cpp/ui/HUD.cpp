@@ -2,7 +2,16 @@
 #include "core/Log.h"
 #include <cstdio>
 
-HUD::HUD() = default;
+void HUD::init(UIRenderer* ui, Font* font, int screenW, int screenH) {
+    m_ui = ui;
+    m_font = font;
+    onScreenChanged(screenW, screenH);
+}
+
+void HUD::onScreenChanged(int w, int h) {
+    m_screenW = w;
+    m_screenH = h;
+}
 
 void HUD::render(UIRenderer* ui, Font* font, int screenWidth, int screenHeight,
                 const Car* playerCar, const LapManager* lapManager, const RaceManager* raceManager,
@@ -66,4 +75,9 @@ void HUD::render(UIRenderer* ui, Font* font, int screenWidth, int screenHeight,
 
     ui->drawRect(screenWidth - 90.0f, screenHeight - 90.0f, 70.0f, 70.0f, 1.0f, 1.0f, 1.0f, 0.2f);
     font->drawText(*ui, "G", screenWidth - 65.0f, screenHeight - 65.0f, 1.5f, 1.0f, 0.9f, 0.2f, 1.0f);
+}
+
+void HUD::draw(const Car& player, const LapManager& lapManager, const RaceManager& raceManager,
+               int playerCarId, int totalLaps) const {
+    const_cast<HUD*>(this)->render(m_ui, m_font, m_screenW, m_screenH, &player, &lapManager, &raceManager, m_mode == Mode::Practice);
 }
