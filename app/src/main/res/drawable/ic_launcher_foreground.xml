@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Steering wheel / Car hood racing icon -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M54,28 A26,26 0 1,0 54,80 A26,26 0 1,0 54,28 Z M54,34 A20,20 0 1,1 54,74 A20,20 0 1,1 54,34 Z" />
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M34,54 h40 v6 h-40 z M51,54 h6 v20 h-6 z" />
+    <!-- Racing Speed Lines -->
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M24,38 L40,38 L36,43 L20,43 Z M20,65 L36,65 L40,70 L24,70 Z" />
+</vector>
