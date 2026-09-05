@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The game renders its own full-screen surface via GameActivity/OpenGL ES.
+        The window theme is kept minimal — just windowBackground black so there
+        is no white flash before the GL surface is ready.
+    -->
+    <style name="Theme.CarRacingGame" parent="android:Theme.Black.NoTitleBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

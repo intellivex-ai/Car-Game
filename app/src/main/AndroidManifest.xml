@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Vibration for haptic feedback on countdown / events.
+        No internet permission needed — all content is local.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
+        Gyroscope is optional — the game falls back to touch-only steering.
+        Declared as NOT required so the game is installable on devices without a gyro.
+    -->
+    <uses-feature
+        android:name="android.hardware.sensor.gyroscope"
+        android:required="false" />
+
+    <!-- Landscape orientation hard lock for all screen sizes -->
+    <uses-feature android:name="android.hardware.screen.landscape" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="false"
+        android:hardwareAccelerated="true"
+        android:theme="@style/Theme.CarRacingGame">
+
+        <!--
+            MainActivity extends GameActivity.
+            - screenOrientation: sensorLandscape allows both landscape orientations
+              depending on how the player holds the device.
+            - configChanges: prevents Activity restart on orientation/keyboard changes,
+              which would destroy the native surface and reset the game.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|navigation"
+            android:windowSoftInputMode="adjustNothing">
+
+            <!-- Full-screen immersive: no status bar, no navigation bar -->
+            <meta-data
+                android:name="android.notch_support"
+                android:value="true" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
