@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!--
-        Vibration for haptic feedback on countdown / events.
-        No internet permission needed — all content is local.
-    -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!--
-        Gyroscope is optional — the game falls back to touch-only steering.
-        Declared as NOT required so the game is installable on devices without a gyro.
-    -->
     <uses-feature
         android:name="android.hardware.sensor.gyroscope"
         android:required="false" />
 
-    <!-- Landscape orientation hard lock for all screen sizes -->
     <uses-feature android:name="android.hardware.screen.landscape" />
 
     <application
@@ -28,20 +19,20 @@
         android:theme="@style/Theme.CarRacingGame">
 
         <!--
-            MainActivity extends GameActivity.
-            - screenOrientation: sensorLandscape allows both landscape orientations
-              depending on how the player holds the device.
-            - configChanges: prevents Activity restart on orientation/keyboard changes,
-              which would destroy the native surface and reset the game.
+            GameActivity entry point:
+            GameActivity automatically loads 'libracing_game.so' and calls android_main().
         -->
         <activity
-            android:name=".MainActivity"
+            android:name="com.google.android.games.GameActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|navigation"
             android:windowSoftInputMode="adjustNothing">
 
-            <!-- Full-screen immersive: no status bar, no navigation bar -->
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="racing_game" />
+
             <meta-data
                 android:name="android.notch_support"
                 android:value="true" />
