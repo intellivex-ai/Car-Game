@@ -1,98 +1,96 @@
 #include "gameplay/RaceManager.h"
 #include "core/Log.h"
+#include <algorithm>
+#include <cmath>
 
-void RaceManager::init(LapManager* lapManager, const std::vector<Car*>& cars, const Track* track) {
-    m_lapManager = lapManager;
-    m_cars = cars;
-    m_track = track;
-    m_positions.resize(cars.size());
-    m_state = RaceState::IDLE;
+void RaceManager::startRace(int carCount, int totalLaps) {
+    m_carCount = std::min(carCount, kMaxCars);
+    m_totalLaps = totalLaps;
+    m_state = State::Countdown;
+    m_countdownTimer = kCountdownDuration;
+    m_countdownStep = kCountdownSteps;
+    m_raceTimer = 0.0f;
+    m_finishedCount = 0;
+
+    for (int i = 0; i < kMaxCars; ++i) {
+        m_carStates[i].carId = i;
+        m_carStates[i].position = i + 1;
+        m_carStates[i].lapCount = 0;
+        m_carStates[i].nextCheckpoint = 0;
+        m_carStates[i].distToNext = 0.0f;
+        m_carStates[i].finished = false;
+    }
 }
 
-void RaceManager::startRace() {
-    m_state = RaceState::COUNTDOWN;
-    m_countdownTimer = 3.0f;
-    m_countdownDigit = 3;
-    if (m_lapManager) m_lapManager->reset();
-    LOGI("RaceManager: Race starting — countdown 3...");
-}
-
-void RaceManager::update(float dt) {
-    if (m_state == RaceState::COUNTDOWN) {
+void RaceManager::update(float dt, const LapManager& lapManager,
+                         const JPH::Vec3 carPositions[], const JPH::Vec3 nextWPs[], int carCount) {
+    if (m_state == State::Countdown) {
         m_countdownTimer -= dt;
-        int nextDigit = std::clamp(static_cast<int>(std::ceil(m_countdownTimer)), 0, 3);
-        if (nextDigit != m_countdownDigit) {
-            m_countdownDigit = nextDigit;
-            if (m_onCountdownTick) m_onCountdownTick(m_countdownDigit);
-        }
-
         if (m_countdownTimer <= 0.0f) {
-            m_state = RaceState::RACING;
-            LOGI("RaceManager: GO!");
-            if (m_onCountdownTick) m_onCountdownTick(0); // 0 = GO!
-        }
-    } else if (m_state == RaceState::RACING) {
-        if (m_lapManager) {
-            m_lapManager->update(static_cast<double>(dt));
-        }
-        calculatePositions();
+            m_countdownStep--;
+            m_countdownTimer = kCountdownDuration;
+            if (m_countdownCallback) m_countdownCallback(m_countdownStep);
 
-        // Check if all cars finished
-        bool allFinished = true;
-        for (size_t i = 0; i < m_cars.size(); ++i) {
-            auto state = m_lapManager ? m_lapManager->getCarState(i) : nullptr;
-            if (state && !state->isFinished) {
-                allFinished = false;
-                break;
+            if (m_countdownStep < 0) {
+                m_state = State::Racing;
+                LOGI("RaceManager: GO!");
+            }
+        }
+    } else if (m_state == State::Racing) {
+        m_raceTimer += dt;
+        recalculatePositions(lapManager, carPositions, nextWPs);
+
+        m_finishedCount = 0;
+        for (int i = 0; i < m_carCount; ++i) {
+            if (lapManager.hasFinished(i, m_totalLaps)) {
+                if (!m_carStates[i].finished) {
+                    m_carStates[i].finished = true;
+                    if (m_raceFinishCallback && m_finishedCount == 0) {
+                        m_raceFinishCallback(i);
+                    }
+                }
+                m_finishedCount++;
             }
         }
 
-        if (allFinished) {
-            m_state = RaceState::FINISHED;
-            LOGI("RaceManager: Race finished for all cars!");
-            if (m_onRaceFinish) m_onRaceFinish();
+        if (m_finishedCount >= m_carCount) {
+            m_state = State::Finished;
+            LOGI("RaceManager: All cars finished race");
         }
     }
 }
 
-void RaceManager::calculatePositions() {
-    // Sort car indices by (lap descending, nextCheckpoint descending, distance to next checkpoint ascending)
-    std::vector<size_t> indices(m_cars.size());
-    for (size_t i = 0; i < indices.size(); ++i) indices[i] = i;
-
-    std::sort(indices.begin(), indices.end(), [this](size_t a, size_t b) {
-        auto stateA = m_lapManager ? m_lapManager->getCarState(a) : nullptr;
-        auto stateB = m_lapManager ? m_lapManager->getCarState(b) : nullptr;
-
-        if (!stateA || !stateB) return a < b;
-
-        if (stateA->currentLap != stateB->currentLap) {
-            return stateA->currentLap > stateB->currentLap;
+void RaceManager::recalculatePositions(const LapManager& lm, const JPH::Vec3 carPos[], const JPH::Vec3 nextWPs[]) {
+    for (int i = 0; i < m_carCount; ++i) {
+        m_carStates[i].lapCount = lm.getLapCount(i);
+        m_carStates[i].nextCheckpoint = lm.getNextCheckpoint(i);
+        if (carPos && nextWPs) {
+            m_carStates[i].distToNext = (nextWPs[i] - carPos[i]).Length();
         }
+    }
 
-        if (stateA->nextCheckpoint != stateB->nextCheckpoint) {
-            return stateA->nextCheckpoint > stateB->nextCheckpoint;
-        }
+    std::vector<int> indices(m_carCount);
+    for (int i = 0; i < m_carCount; ++i) indices[i] = i;
 
-        // Compare distance to next checkpoint
-        if (m_track && m_cars[a] && m_cars[b]) {
-            Checkpoint* cpA = const_cast<Track*>(m_track)->getCheckpoint(stateA->nextCheckpoint);
-            if (cpA) {
-                float distA = (m_cars[a]->getPosition() - cpA->getPosition()).LengthSq();
-                float distB = (m_cars[b]->getPosition() - cpA->getPosition()).LengthSq();
-                return distA < distB;
-            }
-        }
-
-        return a < b;
+    std::sort(indices.begin(), indices.end(), [this](int a, int b) {
+        if (m_carStates[a].lapCount != m_carStates[b].lapCount)
+            return m_carStates[a].lapCount > m_carStates[b].lapCount;
+        if (m_carStates[a].nextCheckpoint != m_carStates[b].nextCheckpoint)
+            return m_carStates[a].nextCheckpoint > m_carStates[b].nextCheckpoint;
+        return m_carStates[a].distToNext < m_carStates[b].distToNext;
     });
 
-    for (size_t rank = 0; rank < indices.size(); ++rank) {
-        m_positions[indices[rank]] = static_cast<int>(rank + 1);
+    for (int rank = 0; rank < m_carCount; ++rank) {
+        m_carStates[indices[rank]].position = rank + 1;
     }
 }
 
-int RaceManager::getCarPosition(size_t carIndex) const {
-    if (carIndex < m_positions.size()) return m_positions[carIndex];
+int RaceManager::getPosition(int carId) const {
+    if (carId >= 0 && carId < kMaxCars) return m_carStates[carId].position;
     return 1;
+}
+
+const RaceManager::CarRaceState& RaceManager::getCarState(int carId) const {
+    int safeIdx = (carId >= 0 && carId < kMaxCars) ? carId : 0;
+    return m_carStates[safeIdx];
 }

@@ -5,27 +5,17 @@
 #include "ui/Font.h"
 #include "ui/MainMenu.h"
 #include "renderer/IRenderer.h"
+#include "audio/AudioManager.h"
+#include <game-activity/native_app_glue/android_native_app_glue.h>
 
-/**
- * MainMenuScene
- *
- * The initial scene shown at launch.
- * Renders the main menu and handles navigation to Practice or Race.
- *
- * On Practice/Race button press: replaces the scene stack with a new GameScene.
- */
 class MainMenuScene : public IScene {
 public:
-    /**
-     * @param sceneManager  Shared scene manager (for navigation)
-     * @param renderer      Shared renderer
-     * @param ui            Shared UI renderer
-     * @param font          Shared font
-     */
     MainMenuScene(SceneManager* sceneManager,
                   IRenderer*    renderer,
                   UIRenderer*   ui,
-                  Font*         font);
+                  Font*         font,
+                  AudioManager* audio = nullptr,
+                  android_app*  app = nullptr);
 
     void onEnter() override;
     void onExit()  override;
@@ -35,6 +25,10 @@ public:
 private:
     SceneManager* m_sceneManager = nullptr;
     IRenderer*    m_renderer     = nullptr;
+    UIRenderer*   m_ui           = nullptr;
+    Font*         m_font         = nullptr;
+    AudioManager* m_audio        = nullptr;
+    android_app*  m_app          = nullptr;
     MainMenu      m_menu;
 
     void navigateToPractice();

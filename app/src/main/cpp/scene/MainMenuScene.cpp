@@ -2,21 +2,11 @@
 #include "scene/GameScene.h"
 #include "core/Log.h"
 
-MainMenuScene::MainMenuScene(SceneManager* manager, IRenderer* renderer, UIRenderer* ui, Font* font)
-    : m_manager(manager), m_renderer(renderer), m_ui(ui), m_font(font) {
-    m_mainMenu.setOnPractice([this]() {
-        LOGI("MainMenuScene: Practice selected");
-        if (m_manager) {
-            m_manager->changeScene(std::make_unique<GameScene>(m_manager, m_renderer, m_ui, m_font, true));
-        }
-    });
-
-    m_mainMenu.setOnRace([this]() {
-        LOGI("MainMenuScene: Race selected");
-        if (m_manager) {
-            m_manager->changeScene(std::make_unique<GameScene>(m_manager, m_renderer, m_ui, m_font, false));
-        }
-    });
+MainMenuScene::MainMenuScene(SceneManager* sceneManager, IRenderer* renderer,
+                             UIRenderer* ui, Font* font, AudioManager* audio, android_app* app)
+    : m_sceneManager(sceneManager), m_renderer(renderer), m_ui(ui), m_font(font), m_audio(audio), m_app(app) {
+    m_menu.setOnPractice([this]() { navigateToPractice(); });
+    m_menu.setOnRace([this]() { navigateToRace(); });
 }
 
 void MainMenuScene::onEnter() {
@@ -27,16 +17,26 @@ void MainMenuScene::onExit() {
     LOGI("MainMenuScene exited");
 }
 
-void MainMenuScene::update(float dt) {
-    // Menu animation/update logic
-}
+void MainMenuScene::update(float dt) {}
 
 void MainMenuScene::render() {
     if (!m_ui || !m_renderer) return;
     int w = m_renderer->getWidth();
     int h = m_renderer->getHeight();
 
-    m_ui->beginPass(w, h);
-    m_mainMenu.render(m_ui, m_font, w, h);
-    m_ui->endPass();
+    m_renderer->beginUI();
+    m_menu.render(m_ui, m_font, w, h);
+    m_renderer->endUI();
+}
+
+void MainMenuScene::navigateToPractice() {
+    if (m_sceneManager) {
+        m_sceneManager->changeScene(std::make_unique<GameScene>(GameScene::Mode::Practice, m_sceneManager, m_renderer, m_ui, m_font, m_audio, m_app));
+    }
+}
+
+void MainMenuScene::navigateToRace() {
+    if (m_sceneManager) {
+        m_sceneManager->changeScene(std::make_unique<GameScene>(GameScene::Mode::Race, m_sceneManager, m_renderer, m_ui, m_font, m_audio, m_app));
+    }
 }
